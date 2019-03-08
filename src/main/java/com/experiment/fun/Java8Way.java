@@ -2,13 +2,14 @@ package com.experiment.fun;
 
 import com.experiment.fun.model.Band;
 import com.experiment.fun.model.Company;
-import com.experiment.fun.model.Department;
 import com.experiment.fun.model.Employee;
 import com.experiment.fun.model.Gender;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class Java8Way {
     public static void evaluate(Company company) {
@@ -29,74 +30,75 @@ public class Java8Way {
     }
 
     private static String findMostRepeatingNameInCompany(Company company) {
-        String repeatingName = null;
         Map<String, Integer> nameAndCount = new HashMap<>();
-        for (Department department : company.getDepartments()) {
-            for (Employee employee : department.getEmployees()) {
-                if (!nameAndCount.containsKey(employee.getName())) {
-                    nameAndCount.put(employee.getName(), 1);
-                } else {
-                    Integer count = nameAndCount.get(employee.getName());
-                    count++;
-                    nameAndCount.put(employee.getName(), count);
-                }
-            }
-        }
-        for (Map.Entry<String, Integer> entry : nameAndCount.entrySet()) {
-            if (entry.getValue().equals(Collections.max(nameAndCount.values()))) {
-                repeatingName = entry.getKey();
-            }
+        company.getDepartments().stream()
+                .flatMap(department -> department.getEmployees().stream())
+                .forEach(employee -> addToNameAndCountMap(nameAndCount, employee));
+        String repeatingName = null;
+        Integer maxCount = Collections.max(nameAndCount.values());
+        Optional<String> repeat = nameAndCount.entrySet().stream()
+                .filter(e -> e.getValue().equals(maxCount))
+                .map(Map.Entry::getKey).findFirst();
+        if (repeat.isPresent()) {
+            repeatingName = repeat.get();
         }
         return repeatingName;
     }
 
+    private static void addToNameAndCountMap(Map<String, Integer> nameAndCount, Employee employee) {
+        if (!nameAndCount.containsKey(employee.getName())) {
+            nameAndCount.put(employee.getName(), 1);
+        } else {
+            Integer count = nameAndCount.get(employee.getName());
+            count++;
+            nameAndCount.put(employee.getName(), count);
+        }
+    }
+
     private static Employee findEmployeeWithHighestSalaryInTheCompany(Company company) {
         Employee costlyEmployee = null;
-        Map<Employee, Long> employeeAndSalary = new HashMap<>();
-        for (Department department : company.getDepartments()) {
-            for (Employee employee : department.getEmployees()) {
-                employeeAndSalary.put(employee, employee.getSalary());
-            }
-        }
-        for (Map.Entry<Employee, Long> entry : employeeAndSalary.entrySet()) {
-            if (entry.getValue().equals(Collections.max(employeeAndSalary.values()))) {
-                costlyEmployee = entry.getKey();
-            }
+        Map<Employee, Long> employeeAndSalary = company.getDepartments().stream()
+                .flatMap(department -> department.getEmployees().stream())
+                .collect(Collectors.toMap(employee -> employee, Employee::getSalary, (a, b) -> b));
+        Long maxSalary = Collections.max(employeeAndSalary.values());
+        Optional<Employee> costly = employeeAndSalary.entrySet().stream()
+                .filter(e -> e.getValue().equals(maxSalary)).map(Map.Entry::getKey).findFirst();
+        if(costly.isPresent()) {
+            costlyEmployee = costly.get();
         }
         return costlyEmployee;
     }
 
     private static Long findSumOfAllMenSalary(Company company) {
-        Long totalSalary = 0L;
-        for (Department department : company.getDepartments()) {
-            for (Employee employee : department.getEmployees()) {
-                if (employee.getGender().equals(Gender.MALE)) {
-                    totalSalary = totalSalary + employee.getSalary();
-                }
-            }
-        }
-        return totalSalary;
+        return company.getDepartments().stream()
+                .flatMap(d -> d.getEmployees().stream())
+                .filter(e -> e.getGender().equals(Gender.MALE))
+                .map(Employee::getSalary).mapToLong(Long::longValue).sum();
     }
 
     private static Band findMostPopularBandInCompany(Company company) {
-        Band popularBand = null;
         Map<Band, Integer> bandAndCount = new HashMap<>();
-        for (Department department : company.getDepartments()) {
-            for (Employee employee : department.getEmployees()) {
-                if (!bandAndCount.containsKey(employee.getBand())) {
-                    bandAndCount.put(employee.getBand(), 1);
-                } else {
-                    Integer count = bandAndCount.get(employee.getBand());
-                    count++;
-                    bandAndCount.put(employee.getBand(), count);
-                }
-            }
-        }
-        for (Map.Entry<Band, Integer> entry : bandAndCount.entrySet()) {
-            if (entry.getValue().equals(Collections.max(bandAndCount.values()))) {
-                popularBand = entry.getKey();
-            }
+        company.getDepartments().stream()
+                .flatMap(department -> department.getEmployees().stream())
+                .forEach(employee -> addToBandAndCoutMap(bandAndCount, employee));
+        Band popularBand = null;
+        Integer maxBand = Collections.max(bandAndCount.values());
+        Optional<Band> popular = bandAndCount.entrySet().stream()
+                .filter(e -> e.getValue().equals(maxBand))
+                .map(Map.Entry::getKey).findFirst();
+        if(popular.isPresent()) {
+            popularBand = popular.get();
         }
         return popularBand;
+    }
+
+    private static void addToBandAndCoutMap(Map<Band, Integer> bandAndCount, Employee employee) {
+        if (!bandAndCount.containsKey(employee.getBand())) {
+            bandAndCount.put(employee.getBand(), 1);
+        } else {
+            Integer count = bandAndCount.get(employee.getBand());
+            count++;
+            bandAndCount.put(employee.getBand(), count);
+        }
     }
 }
