@@ -6,7 +6,6 @@ import com.experiment.fun.model.Employee;
 import com.experiment.fun.model.Gender;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -30,30 +29,20 @@ public class Java8Way {
     }
 
     private static String findMostRepeatingNameInCompany(Company company) {
-        Map<String, Integer> nameAndCount = new HashMap<>();
-        company.getDepartments().stream()
+        Map<String, Long> nameAndCount = company.getDepartments().stream()
                 .flatMap(department -> department.getEmployees().stream())
-                .forEach(employee -> addToNameAndCountMap(nameAndCount, employee));
-        String repeatingName = null;
-        Integer maxCount = Collections.max(nameAndCount.values());
+                .collect(Collectors.groupingBy(Employee::getName,Collectors.counting()));
+        Long maxCount = Collections.max(nameAndCount.values());
         Optional<String> repeat = nameAndCount.entrySet().stream()
                 .filter(e -> e.getValue().equals(maxCount))
                 .map(Map.Entry::getKey).findFirst();
+        String repeatingName = null;
         if (repeat.isPresent()) {
             repeatingName = repeat.get();
         }
         return repeatingName;
     }
 
-    private static void addToNameAndCountMap(Map<String, Integer> nameAndCount, Employee employee) {
-        if (!nameAndCount.containsKey(employee.getName())) {
-            nameAndCount.put(employee.getName(), 1);
-        } else {
-            Integer count = nameAndCount.get(employee.getName());
-            count++;
-            nameAndCount.put(employee.getName(), count);
-        }
-    }
 
     private static Employee findEmployeeWithHighestSalaryInTheCompany(Company company) {
         Employee costlyEmployee = null;
@@ -77,12 +66,11 @@ public class Java8Way {
     }
 
     private static Band findMostPopularBandInCompany(Company company) {
-        Map<Band, Integer> bandAndCount = new HashMap<>();
-        company.getDepartments().stream()
+        Map<Band, Long> bandAndCount = company.getDepartments().stream()
                 .flatMap(department -> department.getEmployees().stream())
-                .forEach(employee -> addToBandAndCoutMap(bandAndCount, employee));
+                .collect(Collectors.groupingBy(Employee::getBand, Collectors.counting()));
         Band popularBand = null;
-        Integer maxBand = Collections.max(bandAndCount.values());
+        Long maxBand = Collections.max(bandAndCount.values());
         Optional<Band> popular = bandAndCount.entrySet().stream()
                 .filter(e -> e.getValue().equals(maxBand))
                 .map(Map.Entry::getKey).findFirst();
@@ -90,15 +78,5 @@ public class Java8Way {
             popularBand = popular.get();
         }
         return popularBand;
-    }
-
-    private static void addToBandAndCoutMap(Map<Band, Integer> bandAndCount, Employee employee) {
-        if (!bandAndCount.containsKey(employee.getBand())) {
-            bandAndCount.put(employee.getBand(), 1);
-        } else {
-            Integer count = bandAndCount.get(employee.getBand());
-            count++;
-            bandAndCount.put(employee.getBand(), count);
-        }
     }
 }
