@@ -36,36 +36,30 @@ public class Java8Way {
     private static String findMostRepeatingNameInCompany(Company company) {
         Collector<Employee, ?, Map<String, Long>> repeatingNameCollector =
                 Collectors.groupingBy(Employee::getName, Collectors.counting());
-        Map<String, Long> nameAndCount = processEmployeeToMap(company, repeatingNameCollector);
-        return fetchParamsFromMap(nameAndCount);
+        return fetchBestOfMappedEmployees(company, repeatingNameCollector);
     }
 
 
     private static Employee findEmployeeWithHighestSalaryInTheCompany(Company company) {
         Collector<Employee, ?, Map<Employee, Long>> highSalary =
                 Collectors.toMap(employee -> employee, Employee::getSalary, (a, b) -> b);
-        Map<Employee, Long> employeeAndSalary = processEmployeeToMap(company, highSalary);
-        return fetchParamsFromMap(employeeAndSalary);
+        return fetchBestOfMappedEmployees(company, highSalary);
     }
 
     private static Band findMostPopularBandInCompany(Company company) {
         Collector<Employee, ?, Map<Band, Long>> popularBandCollector =
                 Collectors.groupingBy(Employee::getBand, Collectors.counting());
-        Map<Band, Long> bandAndCount = processEmployeeToMap(company, popularBandCollector);
-        return fetchParamsFromMap(bandAndCount);
+        return fetchBestOfMappedEmployees(company, popularBandCollector);
     }
 
-    private static <T> T fetchParamsFromMap(Map<T, Long> param) {
-        return param.entrySet().stream()
-                .filter(e -> e.getValue().equals(Collections.max(param.values())))
-                .map(Map.Entry::getKey).findFirst().orElse(null);
-    }
-
-    private static <T> Map<T, Long> processEmployeeToMap(Company company,
-                                                         Collector<Employee, ?, Map<T, Long>> employeeMapCollector) {
-        return company.getDepartments().stream()
+    private static <T> T fetchBestOfMappedEmployees(Company company,
+                                                    Collector<Employee, ?, Map<T, Long>> employeeMapCollector) {
+        Map<T, Long> mappedResults = company.getDepartments().stream()
                 .flatMap(department -> department.getEmployees().stream())
                 .collect(employeeMapCollector);
+        return mappedResults.entrySet().stream()
+                .filter(e -> e.getValue().equals(Collections.max(mappedResults.values())))
+                .map(Map.Entry::getKey).findFirst().orElse(null);
     }
 
     private static Long findSumOfAllMenSalary(Company company) {
